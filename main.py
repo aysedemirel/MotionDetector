@@ -20,24 +20,29 @@ class MainMenu(Frame):
         video2.grid(row=1, column=0, padx=20, pady=10)
         video2.image = photo7
 
+        video_bottom=Frame(video_frame, width=600, height=100)
+        video_bottom.grid(row=2, column=0)
         image = Image.open("mor_play.png")
         photo = ImageTk.PhotoImage(image)
-        play = Button(video_frame, image=photo,border=0)
+        play = Button(video_bottom, image=photo,border=0)
         play.image = photo
+        play.grid(row=0, column=0)
        # play.place(relx=0.4, rely=0.87, relheight=0.15, relwidth=0.1)
-        play.grid(row=2, column=0, padx=10, pady=0,sticky="W")
+        #play.grid(row=2, column=0, padx=10, pady=0,sticky="W")
 
         image2 = Image.open("mor_stop.png")
         photo2 = ImageTk.PhotoImage(image2)
-        pause = Button(video_frame, image=photo2, text="Pause", border=0)
+        pause = Button(video_bottom, image=photo2, text="Pause", border=0)
         pause.image = photo2
-        pause.place(relx=0.09, rely=0.9225, relheight=0.1, relwidth=0.1)
+        pause.grid(row=0, column=1)
+        #pause.place(relx=0.09, rely=0.9223, relheight=0.1, relwidth=0.1)
         #pause.grid(row=2, column=0, padx=10, pady=0,sticky="NW")
 
 
-        slider = Scale(video_frame, from_=0, to=100, orient=HORIZONTAL, length=500, fg='black')
+        slider = Scale(video_bottom, from_=0, to=100, orient=HORIZONTAL, length=500, fg='black')
+        slider.grid(row=0, column=2)
        # slider.grid(row=2, column=0, padx=20, pady=0,sticky="E")
-        slider.place(relx=0.2, rely=0.9225, relheight=0.1, relwidth=0.77)
+        #slider.place(relx=0.2, rely=0.9225, relheight=0.1, relwidth=0.77)
 
         rightFrame = Frame(root, width=100, height=50)
         rightFrame.grid(row=0, column=1, padx=50, pady=10)
