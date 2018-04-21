@@ -3,13 +3,16 @@ from PIL import Image, ImageTk
 import numpy as np
 import cv2
 import tkinter as tk, threading
-
-
+listbox_date=None
+listbox_startFrame=None
+listbox_endFrame=None
+selection=0
+previousValue=0
 class MainMenu(Frame):
     def __init__(self, master):  # main menu
         Frame.__init__(self, master)
         self.grid()
-
+        global listbox_date,listbox_endFrame,listbox_startFrame
         video_frame = Frame(root, width=600, height=600)
         video_frame.grid(row=0, column=0, padx=20, pady=0)
 
@@ -47,28 +50,73 @@ class MainMenu(Frame):
         right_frame = Frame(root, width=100, height=50)
         right_frame.grid(row=0, column=1, padx=50, pady=10)
 
-        date = Label(right_frame, text="DATE", width=15, height=1, bg="white")
-        date.grid(row=0, column=0, padx=5, pady=5, sticky="NW")
+        date = Label(right_frame, text="DATE", width=25, height=1, bg="white")
+        date.grid(row=0, column=0, padx=5, pady=5,sticky="NW")
 
-        start_frame = Label(right_frame, text="START FRAME", width=15, height=1, bg="white")
-        start_frame.grid(row=0, column=0, padx=5, pady=5, sticky="N")
+        start_frame = Label(right_frame, text="START FRAME", width=25, height=1, bg="white")
+        start_frame.grid(row=0, column=1, padx=5, pady=5)
 
-        end_frame = Label(right_frame, text="END FRAME", width=15, height=1, bg="white")
-        end_frame.grid(row=0, column=0, padx=5, pady=5, sticky="NE")
+        end_frame = Label(right_frame, text="END FRAME", width=25, height=1, bg="white")
+        end_frame.grid(row=0, column=2, padx=5, pady=5)
 
-        listbox = Listbox(right_frame, width=100, height=45)
-        listbox.grid()
+        listbox_date = Listbox(right_frame, width=33, height=45,)
+        listbox_date.bind("<<ListboxSelect>>", self.OnSelect)
+        listbox_date.grid(row=1,column=0)
 
-        for i in range(0, 1000):
-            listbox.insert(END, "21.04.2018 "
-                               "                                                                  255     "
-                               "                                                                    1000")
-        scrollbar = Scrollbar(right_frame)
-        scrollbar.grid(sticky="NSW", row=0, column=2, rowspan=2)
+        for i in range(100):
+            listbox_date.insert(END,"21.04.2018")
+            listbox_date.insert(END, i)
 
-        listbox.config(yscrollcommand=scrollbar.set)
-        scrollbar.config(command=listbox.yview)
+        listbox_startFrame = Listbox(right_frame, width=33, height=45)
+        listbox_startFrame.bind("<<ListboxSelect>>", self.OnSelect)
+        listbox_startFrame.grid(row=1,column=1)
 
+        for i in range(100):
+            listbox_startFrame.insert(END,"255")
+            listbox_startFrame.insert(END, i)
+
+        listbox_endFrame = Listbox(right_frame, width=33, height=45,selectbackground="blue")
+        listbox_endFrame.bind("<<ListboxSelect>>", self.OnSelect)
+        listbox_endFrame.grid(row=1,column=2)
+
+        for i in range(100):
+            listbox_endFrame.insert(END,"1628")
+            listbox_endFrame.insert(END, i)
+
+        scrollbar = Scrollbar(right_frame,command=self.scrollBoth)
+        scrollbar.grid(sticky="NSW", row=1, column=3, rowspan=2)
+
+        listbox_date.configure(yscrollcommand=scrollbar.set,selectbackground="purple4")
+        listbox_startFrame.configure(selectbackground="purple4")
+        listbox_endFrame.configure(selectbackground="purple4")
+
+    def OnSelect(self, event):
+        global selection,previousValue
+        widget = event.widget
+        previousValue=selection
+        selection = widget.curselection()
+        if previousValue is not selection:
+            listbox_date.itemconfig(previousValue, background="white", foreground="black")
+            listbox_startFrame.itemconfig(previousValue, background="white", foreground="black")
+            listbox_endFrame.itemconfig(previousValue, background="white", foreground="black")
+
+            listbox_date.itemconfig(selection, background="purple4", foreground="white")
+            listbox_startFrame.itemconfig(selection,background="purple4",foreground="white")
+            listbox_endFrame.itemconfig(selection, background="purple4", foreground="white")
+        else:
+            listbox_date.itemconfig(selection, background="purple4", foreground="white")
+            listbox_startFrame.itemconfig(selection, background="purple4", foreground="white")
+            listbox_endFrame.itemconfig(selection, background="purple4", foreground="white")
+
+
+
+
+    def scrollBoth(self, *args):
+        global listbox_date,listbox_startFrame,listbox_endFrame
+        listbox_date.yview(*args)
+        listbox_startFrame.yview(*args)
+        listbox_endFrame.yview(*args)
+        return None
     def stream(self, label):
         cap = cv2.VideoCapture(0)
         while cap.isOpened():
