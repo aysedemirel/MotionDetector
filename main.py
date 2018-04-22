@@ -11,7 +11,12 @@ previousValue = 0
 class MainMenu(Frame):
     videoFirst = 0
     videoPlay = False
-    sliderLenght = 100
+    scrll = False
+    clk = 0
+    last=0
+    videostart = 0
+    videoend = 0
+
     def __init__(self, master):  # main menu
         Frame.__init__(self, master)
         self.grid()
@@ -84,7 +89,7 @@ class MainMenu(Frame):
             current_date = time.strftime("%d/%m/%Y")+"      "+time.strftime("%H:%M:%S")
             self.listbox_date.insert(END, current_date)
             self.listbox_startFrame.insert(END, str(20))
-            self.listbox_endFrame.insert(END, str(400))
+            self.listbox_endFrame.insert(END, str(3000))
 
         self.scrollbar = Scrollbar(self.right_frame, command=self.scrollBoth)
         self.scrollbar.grid(sticky="NSW", row=1, column=3, rowspan=2)
@@ -94,11 +99,18 @@ class MainMenu(Frame):
         self.listbox_endFrame.configure(selectbackground="purple4")
 
     def draw_slider(self):
-        self.slider = Scale(self.video_bottom, from_=0, to=self.sliderLenght, orient=HORIZONTAL, length=500, fg='black')
+        self.slider = Scale(self.video_bottom, from_=self.videostart, to=self.videoend, orient=HORIZONTAL,
+                            length=500, command=self.slider_func)
         self.slider.grid(row=0, column=2)
+
+    def slider_func(self, label):
+        if self.videoPlay == False:
+            self.scrll = True
 
     def contn(self):
         self.videoPlay = True
+        self.scrll = False
+        self.slider.set(self.last)
 
     def stop(self):
         self.videoPlay = False
@@ -131,13 +143,13 @@ class MainMenu(Frame):
         self.videoend = self.listbox_endFrame.get(selection)
         self.contn()
         if self.videoFirst == 1:
+            self.videoPlay = True
             thread2 = threading.Thread(target=self.video_open, args=(self.video2,))
             thread2.daemon = 1
             thread2.start()
 
     def video_open(self, label):
         cap = cv2.VideoCapture('video1.MKV')
-        self.sliderLenght = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         self.draw_slider()
         previous = self.videoFirst
         count = 0
@@ -152,15 +164,36 @@ class MainMenu(Frame):
                     label.config(image=frame_image)
                     label.image = frame_image
                     self.slider.set(count)
+                    self.last = self.slider.get()
                 count += 1
             else:
                 while True:
                     if self.videoPlay is True:
                         break
+                    if self.last != self.slider.get() and int(self.videostart) <= self.slider.get() <= int(self.videoend):
+                        self.last = self.slider.get()
+                    if self.scrll is True:
+                        self.clk = 0
+                        cap = cv2.VideoCapture('video1.MKV')
+                        while cap.isOpened():
+                            ret, frame = cap.read()
+                            if self.last == self.clk:
+                                img = cv2.resize(frame, (600, 350))
+                                rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                                frame_image = ImageTk.PhotoImage(Image.fromarray(rgb))
+                                label.config(image=frame_image)
+                                label.image = frame_image
+                                self.last = self.slider.get()
+                                count = self.clk
+                                break
+                            self.clk += 1
             if cv2.waitKey(1) & self.videoFirst != previous:
                 break
-        cap.release()
-        cv2.destroyAllWindows()
+        # cap.release()
+        # cv2.destroyAllWindows()
+        self.videoPlay = True
+        self.scrll = False
+        self.last = 0
         self.video_open(label)
 
     def scrollBoth(self, *args):
@@ -178,8 +211,8 @@ class MainMenu(Frame):
             frame_image = ImageTk.PhotoImage(Image.fromarray(rgb))
             label.config(image=frame_image)
             label.image = frame_image
-        cap.release()
-        cv2.destroyAllWindows()
+        #cap.release()
+        #cv2.destroyAllWindows()
 
     def saveInListbox(self, start_frame, end_frame):
         if self.motion is True:
