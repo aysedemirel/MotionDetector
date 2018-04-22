@@ -4,8 +4,10 @@ import numpy as np
 import cv2
 import tkinter as tk, threading
 import time
-selection=0
-previousValue=0
+selection = 0
+previousValue = 0
+
+
 class MainMenu(Frame):
     def __init__(self, master):  # main menu
         Frame.__init__(self, master)
@@ -62,10 +64,10 @@ class MainMenu(Frame):
         self.listbox_date.grid(row=1, column=0)
 
         for i in range(1000):
-              current_date = time.strftime("%d/%m/%Y")
-              self.listbox_date.insert(END, current_date)
-        #current_time=time.strftime("%H:%M:%S")
-        #listbox_date.insert(END, current_time)
+            current_date = time.strftime("%d/%m/%Y")+"      "+time.strftime("%H:%M:%S")
+            self.listbox_date.insert(END, current_date)
+        # current_time=
+        # listbox_date.insert(END, current_time)
 
         self.listbox_startFrame = Listbox(self.right_frame, width=33, height=45)
         self.listbox_startFrame.bind("<<ListboxSelect>>", self.OnSelect)
@@ -74,8 +76,6 @@ class MainMenu(Frame):
         self.listbox_endFrame = Listbox(self.right_frame, width=33, height=45, selectbackground="blue")
         self.listbox_endFrame.bind("<<ListboxSelect>>", self.OnSelect)
         self.listbox_endFrame.grid(row=1, column=2)
-
-
 
         self.scrollbar = Scrollbar(self.right_frame, command=self.scrollBoth)
         self.scrollbar.grid(sticky="NSW", row=1, column=3, rowspan=2)
@@ -87,7 +87,7 @@ class MainMenu(Frame):
     def OnSelect(self, event):
         global selection, previousValue
         widget = event.widget
-        previousValue=selection
+        previousValue = selection
         selection = widget.curselection()
         if previousValue is not selection:
             self.listbox_date.itemconfig(previousValue, background="white", foreground="black")
@@ -101,6 +101,7 @@ class MainMenu(Frame):
             self.listbox_date.itemconfig(selection, background="purple4", foreground="white")
             self.listbox_startFrame.itemconfig(selection, background="purple4", foreground="white")
             self.listbox_endFrame.itemconfig(selection, background="purple4", foreground="white")
+
     def scrollBoth(self, *args):
         self.listbox_date.yview(*args)
         self.listbox_startFrame.yview(*args)
@@ -115,7 +116,7 @@ class MainMenu(Frame):
             frame_image = ImageTk.PhotoImage(Image.fromarray(rgb))
             label.config(image=frame_image)
             label.image = frame_image
-    def saveInListbox(self,start_frame,end_frame):
+    def saveInListbox(self, start_frame, end_frame):
         if self.motion == True:
             current_date = time.strftime("%d/%m/%Y")
             self.listbox_date.insert(END, current_date)
@@ -124,6 +125,5 @@ class MainMenu(Frame):
 
 root = Tk()
 root.geometry("1500x1200")
-root.attributes("-fullscreen", True)
 app = MainMenu(root)
 root.mainloop()
