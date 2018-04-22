@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import tkinter as tk, threading
 import time
+from datetime import datetime  # importing datetime for naming files w/ timestamp
 selection = 0
 previousValue = 0
 
@@ -21,8 +22,11 @@ class MainMenu(Frame):
         Frame.__init__(self, master)
         self.grid()
 
-        """self.quit_button = Button(root, width=10, height=10, text="quit", command=self.quit)
-        self.quit_button.grid(row=0, column=2)"""
+        self.image_quit = Image.open("quit.png")
+        self.photo_quit = ImageTk.PhotoImage(self.image_quit)
+        self.quit_button = Button(root, image=self.photo_quit, border=0, command=self.quit)
+        self.quit_button.image = self.photo_quit
+        self.quit_button.grid(row=0, column=0, sticky="NW")
 
         self.video_frame = Frame(root, width=600, height=600)
         self.video_frame.grid(row=0, column=0, padx=20, pady=0)
@@ -85,12 +89,6 @@ class MainMenu(Frame):
         self.listbox_endFrame.bind("<Double-Button-1>", self.OnDouble)
         self.listbox_endFrame.grid(row=1, column=2)
 
-        for i in range(1000):
-            current_date = time.strftime("%d/%m/%Y")+"      "+time.strftime("%H:%M:%S")
-            self.listbox_date.insert(END, current_date)
-            self.listbox_startFrame.insert(END, str(20))
-            self.listbox_endFrame.insert(END, str(3000))
-
         self.scrollbar = Scrollbar(self.right_frame, command=self.scrollBoth)
         self.scrollbar.grid(sticky="NSW", row=1, column=3, rowspan=2)
 
@@ -104,7 +102,7 @@ class MainMenu(Frame):
         self.slider.grid(row=0, column=2)
 
     def slider_func(self, label):
-        if self.videoPlay == False:
+        if not self.videoPlay:
             self.scrll = True
 
     def contn(self):
@@ -149,7 +147,7 @@ class MainMenu(Frame):
             thread2.start()
 
     def video_open(self, label):
-        cap = cv2.VideoCapture('video1.MKV')
+        cap = cv2.VideoCapture('output.avi')
         self.draw_slider()
         previous = self.videoFirst
         count = 0
@@ -203,28 +201,68 @@ class MainMenu(Frame):
         return None
 
     def stream(self, label):
-        cap = cv2.VideoCapture(0)
-        while cap.isOpened():  # and self.camera_on:
-            ret, frame = cap.read()
-            img = cv2.resize(frame, (600, 350))
-            rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            frame_image = ImageTk.PhotoImage(Image.fromarray(rgb))
-            label.config(image=frame_image)
-            label.image = frame_image
-        #cap.release()
-        #cv2.destroyAllWindows()
+        self.cap = cv2.VideoCapture(0)
+        self.t_minus = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
+        self.t = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
+        self.t_plus = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
+        timeCheck = datetime.now().strftime('%Ss')
+        counter = 0
+        temp = 0
+        start = 0
+        end = 0
+        enterStart = False
+        first = 0
+        self.fourcc=cv2.VideoWriter_fourcc(*'XVID')
+        self.out=cv2.VideoWriter('output.avi', self.fourcc,20.0,(640,480))
+        while self.cap.isOpened():  # and self.camera_on:
+            ret, self.frame = self.cap.read()
+            self.out.write(self.frame)
+            self.img = cv2.resize(self.frame, (600, 350))
+            self.rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
+            self.frame_image = ImageTk.PhotoImage(Image.fromarray(self.rgb))
+            label.config(image=self.frame_image)
+            label.image = self.frame_image
+
+            threshold = 81500
+            if cv2.countNonZero(self.diffImg(self.t_minus, self.t, self.t_plus)) > threshold and timeCheck != datetime.now().strftime('%Ss'):
+                first += 1
+                if first == 1:
+                    temp = 1
+                if temp == 1:
+                    enterStart = True
+                    start = counter
+            else:
+                if enterStart:
+                    end = counter
+                    first = 0
+                    enterStart = False
+            timeCheck = datetime.now().strftime('%Ss')
+            # Read next image
+            self.t_minus = self.t
+            self.t = self.t_plus
+            self.t_plus = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
+
+            key = cv2.waitKey(10)
+            if key == 27:
+                cv2.destroyWindow(winName)  # comment to hide window
+                break
+            counter += 1
+            self.saveInListbox(start, end)
 
     def saveInListbox(self, start_frame, end_frame):
-        if self.motion is True:
-            current_date = time.strftime("%d/%m/%Y")
+
+            current_date = time.strftime("%d/%m/%Y")+"     "+time.strftime("%H:%M:%S")
             self.listbox_date.insert(END, current_date)
-            self.listbox_startFrame.insert(END, self.current_start_frame)
-            self.listbox_endFrame.insert(END, self.current_end_frame)
+            self.listbox_startFrame.insert(END, start_frame)
+            self.listbox_endFrame.insert(END, end_frame)
 
-    """def quit(self):
+    def quit(self):
         self.camera_on = False
-        root.destroy()"""
-
+        root.destroy()
+    def diffImg(self, t0, t1, t2):  # Function to calculate difference between images.
+        d1 = cv2.absdiff(t2, t1)
+        d2 = cv2.absdiff(t1, t0)
+        return cv2.bitwise_and(d1, d2)
 root = Tk()
 root.geometry("1500x1200")
 app = MainMenu(root)
