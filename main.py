@@ -14,7 +14,7 @@ class MainMenu(Frame):
     videoPlay = False
     scrll = False
     clk = 0
-    last = 0
+    last=0
     videostart = 0
     videoend = 0
 
@@ -75,25 +75,21 @@ class MainMenu(Frame):
         self.end_frame.grid(row=0, column=2, padx=5, pady=5)
 
         self.listbox_date = Listbox(self.right_frame, width=33, height=45,)
-        self.listbox_date.bind("<<ListboxSelect>>", self.on_select)
-        self.listbox_date.bind("<Double-Button-1>", self.on_double)
+        self.listbox_date.bind("<<ListboxSelect>>", self.OnSelect)
+        self.listbox_date.bind("<Double-Button-1>", self.OnDouble)
         self.listbox_date.grid(row=1, column=0)
 
         self.listbox_startFrame = Listbox(self.right_frame, width=33, height=45)
-        self.listbox_startFrame.bind("<<ListboxSelect>>", self.on_select)
-        self.listbox_startFrame.bind("<Double-Button-1>", self.on_double)
+        self.listbox_startFrame.bind("<<ListboxSelect>>", self.OnSelect)
+        self.listbox_startFrame.bind("<Double-Button-1>", self.OnDouble)
         self.listbox_startFrame.grid(row=1, column=1)
 
         self.listbox_endFrame = Listbox(self.right_frame, width=33, height=45, selectbackground="blue")
-        self.listbox_endFrame.bind("<<ListboxSelect>>", self.on_select)
-        self.listbox_endFrame.bind("<Double-Button-1>", self.on_double)
+        self.listbox_endFrame.bind("<<ListboxSelect>>", self.OnSelect)
+        self.listbox_endFrame.bind("<Double-Button-1>", self.OnDouble)
         self.listbox_endFrame.grid(row=1, column=2)
 
-        self.listbox_date.insert(END, "07.07.1907")
-        self.listbox_startFrame.insert(END, "40")
-        self.listbox_endFrame.insert(END, "400")
-
-        self.scrollbar = Scrollbar(self.right_frame, command=self.scroll_both)
+        self.scrollbar = Scrollbar(self.right_frame, command=self.scrollBoth)
         self.scrollbar.grid(sticky="NSW", row=1, column=3, rowspan=2)
 
         self.listbox_date.configure(yscrollcommand=self.scrollbar.set, selectbackground="purple4")
@@ -117,7 +113,7 @@ class MainMenu(Frame):
     def stop(self):
         self.videoPlay = False
 
-    def on_select(self, event):
+    def OnSelect(self, event):
         global selection, previousValue
         widget = event.widget
         previousValue = selection
@@ -137,7 +133,7 @@ class MainMenu(Frame):
             self.listbox_startFrame.itemconfig(selection, background="purple4", foreground="white")
             self.listbox_endFrame.itemconfig(selection, background="purple4", foreground="white")
 
-    def on_double(self, event):
+    def OnDouble(self, event):
         self.videoFirst += 1
         widget = event.widget
         selection = widget.curselection()
@@ -176,7 +172,7 @@ class MainMenu(Frame):
                         self.last = self.slider.get()
                     if self.scrll is True:
                         self.clk = 0
-                        cap = cv2.VideoCapture('output.avi')
+                        cap = cv2.VideoCapture('video1.MKV')
                         while cap.isOpened():
                             ret, frame = cap.read()
                             if self.last == self.clk:
@@ -198,7 +194,7 @@ class MainMenu(Frame):
         self.last = 0
         self.video_open(label)
 
-    def scroll_both(self, *args):
+    def scrollBoth(self, *args):
         self.listbox_date.yview(*args)
         self.listbox_startFrame.yview(*args)
         self.listbox_endFrame.yview(*args)
@@ -206,15 +202,16 @@ class MainMenu(Frame):
 
     def stream(self, label):
         self.cap = cv2.VideoCapture(0)
+
         self.t_minus = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
-        self.t = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
+        #self.t = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
         self.t_plus = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
-        time_check = datetime.now().strftime('%Ss')
+        timeCheck = datetime.now().strftime('%Ss')
         counter = 0
         temp = 0
         start = 0
         end = 0
-        enter_start = False
+        enterStart = False
         first = 0
         self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self.out = cv2.VideoWriter('output.avi', self.fourcc, 20.0, (640, 480))
@@ -227,33 +224,41 @@ class MainMenu(Frame):
             label.config(image=self.frame_image)
             label.image = self.frame_image
 
-            threshold = 81500
-            if cv2.countNonZero(self.diff_img(self.t_minus, self.t, self.t_plus)) > threshold and time_check != datetime.now().strftime('%Ss'):
+            x = cv2.threshold(self.t_plus, 127, 255, cv2.THRESH_BINARY)
+
+
+            #print(self.diffImg(self.t_minus, self.t, self.t_plus))
+
+            if cv2.countNonZero(cv2.absdiff(self.t_minus, self.t_plus)) > 81500 :#and timeCheck != datetime.now().strftime('%Ss'):
+                print(cv2.countNonZero(cv2.absdiff(self.t_minus, self.t_plus)))
                 first += 1
+                counter += 1
+
                 if first == 1:
-                    temp = 1
-                if temp == 1:
-                    enter_start = True
+                    enterStart = True
                     start = counter
+
             else:
-                if enter_start:
+                if enterStart:
                     end = counter
                     first = 0
-                    enter_start = False
-            time_check = datetime.now().strftime('%Ss')
+                    enterStart = False
+                    self.saveInListbox(start, end)
+            timeCheck = datetime.now().strftime('%Ss')
             # Read next image
-            self.t_minus = self.t
-            self.t = self.t_plus
+            self.t_minus = self.t_plus
+            #self.t = self.t_plus
             self.t_plus = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
 
             key = cv2.waitKey(10)
             if key == 27:
-                cv2.destroyWindow(winName)  # comment to hide window
                 break
-            counter += 1
-            self.save_in_listbox(start, end)
 
-    def save_in_listbox(self, start_frame, end_frame):
+
+
+
+    def saveInListbox(self, start_frame, end_frame):
+
             current_date = time.strftime("%d/%m/%Y")+"     "+time.strftime("%H:%M:%S")
             self.listbox_date.insert(END, current_date)
             self.listbox_startFrame.insert(END, start_frame)
@@ -262,12 +267,10 @@ class MainMenu(Frame):
     def quit(self):
         self.camera_on = False
         root.destroy()
-
-    def diff_img(self, t0, t1, t2):  # Function to calculate difference between images.
+    def diffImg(self, t0, t1, t2):  # Function to calculate difference between images.
         d1 = cv2.absdiff(t2, t1)
         d2 = cv2.absdiff(t1, t0)
         return cv2.bitwise_and(d1, d2)
-
 root = Tk()
 root.geometry("1500x1200")
 app = MainMenu(root)
