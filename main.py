@@ -89,7 +89,7 @@ class MainMenu(Frame):
         self.listbox_endFrame.bind("<Double-Button-1>", self.on_double)
         self.listbox_endFrame.grid(row=1, column=2)
 
-        self.listbox_date.insert(END, "23.07.1996")
+        self.listbox_date.insert(END, "07.07.1907")
         self.listbox_startFrame.insert(END, "40")
         self.listbox_endFrame.insert(END, "400")
 
