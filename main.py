@@ -24,7 +24,7 @@ class MainMenu(Frame):
         Frame.__init__(self, master)
         self.grid()
 
-        self.image_quit = Image.open("quit.png")
+        self.image_quit = Image.open("img/quit.png")
         self.photo_quit = ImageTk.PhotoImage(self.image_quit)
         self.quit_button = Button(root, image=self.photo_quit, border=0, command=self.quit)
         self.quit_button.image = self.photo_quit
@@ -33,7 +33,7 @@ class MainMenu(Frame):
         self.video_frame = Frame(root, width=600, height=600)
         self.video_frame.grid(row=0, column=0, padx=20, pady=0)
 
-        self.image7 = Image.open("video-generic.png")
+        self.image7 = Image.open("img/video-generic.png")
         self.photo7 = ImageTk.PhotoImage(self.image7)
 
         self.video1 = Label(self.video_frame, width=600, height=350, bg="black")
@@ -50,13 +50,13 @@ class MainMenu(Frame):
 
         self.video_bottom = Frame(self.video_frame, width=600, height=100)
         self.video_bottom.grid(row=2, column=0)
-        self.image = Image.open("mor_play.png")
+        self.image = Image.open("img/mor_play.png")
         self.photo = ImageTk.PhotoImage(self.image)
         self.play = Button(self.video_bottom, image=self.photo, border=0, command=self.contn)
         self.play.image = self.photo
         self.play.grid(row=0, column=0)
 
-        self.image2 = Image.open("mor_stop.png")
+        self.image2 = Image.open("img/mor_stop.png")
         self.photo2 = ImageTk.PhotoImage(self.image2)
         self.pause = Button(self.video_bottom, image=self.photo2, text="Pause", border=0, command=self.stop)
         self.pause.image = self.photo2
@@ -161,7 +161,7 @@ class MainMenu(Frame):
             ret, frame = cap.read()
             if self.videoPlay is True:
                 if int(self.videostart) <= count <= int(self.videoend):
-                    time.sleep(0.01)
+                    time.sleep(0.1)
                     img = cv2.resize(frame, (600, 350))
                     rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     frame_image = ImageTk.PhotoImage(Image.fromarray(rgb))
@@ -237,7 +237,7 @@ class MainMenu(Frame):
 
             if cv2.countNonZero(cv2.absdiff(t_minus, t_plus)) > 81500:
                 # and time_check != datetime.now().strftime('%Ss'):
-                print(cv2.countNonZero(cv2.absdiff(t_minus, t_plus)))
+                # print(cv2.countNonZero(cv2.absdiff(t_minus, t_plus)))
                 first += 1
                 counter += 1
 
