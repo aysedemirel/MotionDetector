@@ -1,15 +1,15 @@
 from tkinter import *
 from PIL import Image, ImageTk
-import numpy as np
 import cv2
-import tkinter as tk, threading
+import threading
 import time
-from datetime import datetime  # importing datetime for naming files w/ timestamp
+
 selection = 0
 previousValue = 0
 
 
 class MainMenu(Frame):
+    img = ...  # type: None
     videoFirst = 0
     videoPlay = False
     scrll = False
@@ -74,7 +74,7 @@ class MainMenu(Frame):
         self.end_frame = Label(self.right_frame, text="END FRAME", width=25, height=1, bg="white")
         self.end_frame.grid(row=0, column=2, padx=5, pady=5)
 
-        self.listbox_date = Listbox(self.right_frame, width=33, height=45,)
+        self.listbox_date = Listbox(self.right_frame, width=33, height=45, )
         self.listbox_date.bind("<<ListboxSelect>>", self.OnSelect)
         self.listbox_date.bind("<Double-Button-1>", self.OnDouble)
         self.listbox_date.grid(row=1, column=0)
@@ -136,9 +136,9 @@ class MainMenu(Frame):
     def OnDouble(self, event):
         self.videoFirst += 1
         widget = event.widget
-        selection = widget.curselection()
-        self.videostart = self.listbox_startFrame.get(selection)
-        self.videoend = self.listbox_endFrame.get(selection)
+        selectionLine = widget.curselection()
+        self.videostart = self.listbox_startFrame.get(selectionLine)
+        self.videoend = self.listbox_endFrame.get(selectionLine)
         self.contn()
         if self.videoFirst == 1:
             self.videoPlay = True
@@ -168,7 +168,8 @@ class MainMenu(Frame):
                 while True:
                     if self.videoPlay is True:
                         break
-                    if self.last != self.slider.get() and int(self.videostart) <= self.slider.get() <= int(self.videoend):
+                    if self.last != self.slider.get() and int(self.videostart) <= self.slider.get() <= int(
+                            self.videoend):
                         self.last = self.slider.get()
                     if self.scrll is True:
                         self.clk = 0
@@ -201,34 +202,39 @@ class MainMenu(Frame):
         return None
 
     def stream(self, label):
-        self.cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(0)
 
-        self.t_minus = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
-        ret, self.t_minus = cv2.threshold(self.t_minus, 40, 255, cv2.THRESH_BINARY)
-        self.t_plus = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
-        ret, self.t_plus = cv2.threshold(self.t_plus, 40, 255, cv2.THRESH_BINARY)
+        t_minus = cv2.cvtColor(cap.read()[1], cv2.COLOR_RGB2GRAY)
+        ret, t_minus = cv2.threshold(t_minus, 70, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        t_middle = cv2.cvtColor(cap.read()[1], cv2.COLOR_RGB2GRAY)
+        ret, t_middle = cv2.threshold(t_middle, 70, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        t_plus = cv2.cvtColor(cap.read()[1], cv2.COLOR_RGB2GRAY)
+        ret, t_plus = cv2.threshold(t_plus, 70, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         counter = 0
         start = 0
         enterStart = False
         first = 0
-        self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.out = cv2.VideoWriter('output.avi', self.fourcc, 20.0, (640, 480))
-        while self.cap.isOpened():  # and self.camera_on:
-            ret, self.frame = self.cap.read()
-            self.out.write(self.frame)
-            self.img = cv2.resize(self.frame, (600, 350))
-            self.rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
-            self.frame_image = ImageTk.PhotoImage(Image.fromarray(self.rgb))
-            label.config(image=self.frame_image)
-            label.image = self.frame_image
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
+        fbgb = cv2.createBackgroundSubtractorMOG2()
+        while cap.isOpened():  # and self.camera_on:
+            ret, frame = cap.read()
+            out.write(frame)
+            img = cv2.resize(frame, (600, 350))
+            rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            frame_image = ImageTk.PhotoImage(Image.fromarray(rgb))
+            label.config(image=frame_image)
+            label.image = frame_image
 
-
-            #print(self.diffImg(self.t_minus, self.t, self.t_plus))
-            #self.t_plus = cv2.adaptiveThreshold(self.t_plus, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 155, 1)
-            print(cv2.countNonZero(cv2.absdiff(self.t_minus, self.t_plus)))
-            if cv2.countNonZero(cv2.absdiff(self.t_minus, self.t_plus)) > cv2.countNonZero(self.t_plus):
-                #and timeCheck != datetime.now().strftime('%Ss'):
-                print(cv2.countNonZero(cv2.absdiff(self.t_minus, self.t_plus)))
+            videoMasked = fbgb.apply(frame)
+            # cv2.imshow("img2", videoMasked)
+            print("difference = ", cv2.countNonZero(cv2.absdiff(t_minus, t_plus)))
+            print("threshold = ", cv2.countNonZero(t_plus))
+            if cv2.countNonZero(self.diffImg(t_minus, t_middle, t_plus)) > 81500:
+                # and timeCheck != datetime.now().strftime('%Ss'):
+                # print(cv2.countNonZero(cv2.absdiff(t_minus, t_plus)))
                 first += 1
 
                 if first == 1:
@@ -240,38 +246,45 @@ class MainMenu(Frame):
                     first = 0
                     enterStart = False
                     self.saveInListbox(start, end)
-            #timeCheck = datetime.now().strftime('%Ss')
             # Read next image
-            self.t_minus = self.t_plus
-            self.t_plus = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_RGB2GRAY)
-            #self.t_plus = cv2.medianBlur(self.t_plus, 15)
-            #self.t_plus = cv2.adaptiveThreshold(self.t_plus, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 155, 3)
-            #self.t_plus = cv2.adaptiveThreshold(self.t_plus, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 155, 3)
-            #self.t_plus = cv2.adaptiveThreshold(self.t_plus, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 155, 0)
 
-            ret, self.t_plus = cv2.threshold(self.t_plus, 60, 255, cv2.THRESH_BINARY)
-            cv2.imshow("img", self.t_plus)
+            t_minus = t_plus
+            t_plus = cv2.cvtColor(cap.read()[1], cv2.COLOR_RGB2GRAY)
+            # t_plus = cv2.medianBlur(t_plus, 15)
+            ret, t_plus = cv2.threshold(t_plus, 70, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            # t_plus = cv2.dilate(t_plus, None, iterations=2)
+            t_plus = cv2.dilate(t_plus, None, iterations=2)
+            contours, _, cns = cv2.findContours(t_plus, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+            # loop over the contours
+            for c in contours:
+                (x, y, w, h) = cv2.boundingRect(c)
+                cv2.rectangle(t_plus, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+            cv2.imshow("img", t_plus)
+
             key = cv2.waitKey(10)
             if key == 27:
                 break
             counter += 1
 
-
     def saveInListbox(self, start_frame, end_frame):
 
-            current_date = time.strftime("%d/%m/%Y")+"     "+time.strftime("%H:%M:%S")
-            self.listbox_date.insert(END, current_date)
-            self.listbox_startFrame.insert(END, start_frame)
-            self.listbox_endFrame.insert(END, end_frame)
+        current_date = time.strftime("%d/%m/%Y") + "     " + time.strftime("%H:%M:%S")
+        self.listbox_date.insert(END, current_date)
+        self.listbox_startFrame.insert(END, start_frame)
+        self.listbox_endFrame.insert(END, end_frame)
 
     def quit(self):
-        #self.camera_on = False
+        # self.camera_on = False
         root.destroy()
-    """
-    def diffImg(t0, t1, t2):  # Function to calculate difference between images.
+
+    def diffImg(self, t0, t1, t2):  # Function to calculate difference between images.
         d1 = cv2.absdiff(t2, t1)
         d2 = cv2.absdiff(t1, t0)
-        return cv2.bitwise_and(d1, d2)"""
+        return cv2.bitwise_and(d1, d2)
+
+
 root = Tk()
 root.geometry("1500x1200")
 app = MainMenu(root)
