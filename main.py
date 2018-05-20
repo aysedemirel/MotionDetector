@@ -22,11 +22,11 @@ class MainMenu(Frame):
         Frame.__init__(self, master)
         self.grid()
 
-        self.image_quit = Image.open("quit.png")
+        """self.image_quit = Image.open("quit.png")
         self.photo_quit = ImageTk.PhotoImage(self.image_quit)
         self.quit_button = Button(root, image=self.photo_quit, border=0, command=self.quit)
         self.quit_button.image = self.photo_quit
-        self.quit_button.grid(row=0, column=0, sticky="NW")
+        self.quit_button.grid(row=0, column=0, sticky="NW")"""
 
         self.video_frame = Frame(root, width=600, height=600)
         self.video_frame.grid(row=0, column=0, padx=20, pady=0)
@@ -62,39 +62,47 @@ class MainMenu(Frame):
 
         self.draw_slider()
 
-        self.right_frame = Frame(root, width=100, height=50)
-        self.right_frame.grid(row=0, column=1, padx=50, pady=10)
+        self.right_frame = Frame(root, width=600, height=600)
+        self.right_frame.grid(row=0, column=1, padx=50, pady=0)
 
-        self.date = Label(self.right_frame, text="DATE", width=25, height=1, bg="white")
-        self.date.grid(row=0, column=0, padx=5, pady=5, sticky="NW")
+        self.right_buttom_frame = Frame(self.right_frame, width=600, height=600)
+        self.right_buttom_frame.grid(row=0, column=0, padx=50, pady=0)
 
-        self.start_frame = Label(self.right_frame, text="START FRAME", width=25, height=1, bg="white")
-        self.start_frame.grid(row=0, column=1, padx=5, pady=5)
+        self.date = Label(self.right_buttom_frame, text="DATE", width=25, height=1, bg="white")
+        self.date.grid(row=0, column=0, padx=5, pady=0, sticky="NW")
 
-        self.end_frame = Label(self.right_frame, text="END FRAME", width=25, height=1, bg="white")
-        self.end_frame.grid(row=0, column=2, padx=5, pady=5)
+        self.start_frame = Label(self.right_buttom_frame, text="START FRAME", width=25, height=1, bg="white")
+        self.start_frame.grid(row=0, column=1, padx=5, pady=0)
 
-        self.listbox_date = Listbox(self.right_frame, width=33, height=45, )
+        self.end_frame = Label(self.right_buttom_frame, text="END FRAME", width=25, height=1, bg="white")
+        self.end_frame.grid(row=0, column=2, padx=5, pady=0)
+
+        self.listbox_date = Listbox(self.right_buttom_frame, width=33, height=20, )
         self.listbox_date.bind("<<ListboxSelect>>", self.OnSelect)
         self.listbox_date.bind("<Double-Button-1>", self.OnDouble)
         self.listbox_date.grid(row=1, column=0)
 
-        self.listbox_startFrame = Listbox(self.right_frame, width=33, height=45)
+        self.listbox_startFrame = Listbox(self.right_buttom_frame, width=33, height=20)
         self.listbox_startFrame.bind("<<ListboxSelect>>", self.OnSelect)
         self.listbox_startFrame.bind("<Double-Button-1>", self.OnDouble)
         self.listbox_startFrame.grid(row=1, column=1)
 
-        self.listbox_endFrame = Listbox(self.right_frame, width=33, height=45, selectbackground="blue")
+        self.listbox_endFrame = Listbox(self.right_buttom_frame, width=33, height=20, selectbackground="blue")
         self.listbox_endFrame.bind("<<ListboxSelect>>", self.OnSelect)
         self.listbox_endFrame.bind("<Double-Button-1>", self.OnDouble)
         self.listbox_endFrame.grid(row=1, column=2)
 
-        self.scrollbar = Scrollbar(self.right_frame, command=self.scrollBoth)
+        self.scrollbar = Scrollbar(self.right_buttom_frame, command=self.scrollBoth)
         self.scrollbar.grid(sticky="NSW", row=1, column=3, rowspan=2)
 
         self.listbox_date.configure(yscrollcommand=self.scrollbar.set, selectbackground="purple4")
         self.listbox_startFrame.configure(selectbackground="purple4")
         self.listbox_endFrame.configure(selectbackground="purple4")
+
+        self.video3 = Label(self.right_frame, width=600, height=380, image=self.photo7, bg="black")
+        self.video3.grid(row=1, column=0, padx=20, pady=10)
+        self.video3.image = self.photo7
+
 
     def draw_slider(self):
         self.slider = Scale(self.video_bottom, from_=self.videostart, to=self.videoend, orient=HORIZONTAL,
@@ -207,11 +215,15 @@ class MainMenu(Frame):
         t_minus = cv2.cvtColor(cap.read()[1], cv2.COLOR_RGB2GRAY)
         ret, t_minus = cv2.threshold(t_minus, 70, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-        t_middle = cv2.cvtColor(cap.read()[1], cv2.COLOR_RGB2GRAY)
-        ret, t_middle = cv2.threshold(t_middle, 70, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        #t_middle = cv2.cvtColor(cap.read()[1], cv2.COLOR_RGB2GRAY)
+        #ret, t_middle = cv2.threshold(t_middle, 70, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
         t_plus = cv2.cvtColor(cap.read()[1], cv2.COLOR_RGB2GRAY)
         ret, t_plus = cv2.threshold(t_plus, 70, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        print(cv2.countNonZero(t_minus))
+        print(cv2.countNonZero(t_plus))
+
         counter = 0
         start = 0
         enterStart = False
@@ -228,13 +240,13 @@ class MainMenu(Frame):
             label.config(image=frame_image)
             label.image = frame_image
 
+            print(cv2.countNonZero(t_minus))
+            
             videoMasked = fbgb.apply(frame)
             # cv2.imshow("img2", videoMasked)
-            print("difference = ", cv2.countNonZero(cv2.absdiff(t_minus, t_plus)))
-            print("threshold = ", cv2.countNonZero(t_plus))
-            if cv2.countNonZero(self.diffImg(t_minus, t_middle, t_plus)) > 81500:
-                # and timeCheck != datetime.now().strftime('%Ss'):
-                # print(cv2.countNonZero(cv2.absdiff(t_minus, t_plus)))
+            #print("difference = ", cv2.countNonZero(cv2.absdiff(t_minus, t_plus)))
+            #print("threshold = ", cv2.countNonZero(t_plus))
+            if cv2.countNonZero(cv2.absdiff(t_minus, t_plus)) > 81500:
                 first += 1
 
                 if first == 1:
@@ -248,7 +260,7 @@ class MainMenu(Frame):
                     self.saveInListbox(start, end)
             # Read next image
 
-            t_minus = t_plus
+            #t_minus = t_plus
             t_plus = cv2.cvtColor(cap.read()[1], cv2.COLOR_RGB2GRAY)
             # t_plus = cv2.medianBlur(t_plus, 15)
             ret, t_plus = cv2.threshold(t_plus, 70, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -261,7 +273,10 @@ class MainMenu(Frame):
                 (x, y, w, h) = cv2.boundingRect(c)
                 cv2.rectangle(t_plus, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
-            cv2.imshow("img", t_plus)
+            img2 = cv2.resize(t_plus, (600, 380))
+            frame_image2 = ImageTk.PhotoImage(Image.fromarray(img2))
+            self.video3.config(image=frame_image2)
+            self.video3.image = frame_image2
 
             key = cv2.waitKey(10)
             if key == 27:
@@ -275,9 +290,9 @@ class MainMenu(Frame):
         self.listbox_startFrame.insert(END, start_frame)
         self.listbox_endFrame.insert(END, end_frame)
 
-    def quit(self):
+    """def quit(self):
         # self.camera_on = False
-        root.destroy()
+        root.destroy()"""
 
     def diffImg(self, t0, t1, t2):  # Function to calculate difference between images.
         d1 = cv2.absdiff(t2, t1)
